@@ -39,6 +39,7 @@ public class Estacionamento {
         entrada.acquire();
         System.out.println(veiculo + " chegou ao portão de entrada");
         boolean conseguiuVaga = false;
+        boolean conseguiuVagaPrioritaria = false;
 
         try {
             if(veiculo.getTipo() == TipoVeiculo.PRIORITARIO){
@@ -47,6 +48,7 @@ public class Estacionamento {
                     // conseguiu vaga prioritaria
                     System.out.println(veiculo + " conseguiu vaga PRIORITARIA");
                     conseguiuVaga = true;
+                    conseguiuVagaPrioritaria = true;
                 }
                 else if(vagaRegular.tryAcquire(2, TimeUnit.SECONDS)){
                     // nao conseguiu vaga prioritaria foi para regular
@@ -67,6 +69,7 @@ public class Estacionamento {
             }
             else {
                totalDesistencias.incrementAndGet(); 
+               System.out.println("Desistiu, não havia vagas disponíveis");
             }
             
         } catch (Exception e) {

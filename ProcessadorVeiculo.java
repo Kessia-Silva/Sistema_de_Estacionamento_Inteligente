@@ -14,13 +14,30 @@ public class ProcessadorVeiculo implements Callable<Long> {
     @Override
     public Long call() throws Exception {
         long inicio = System.currentTimeMillis();
-        
+        boolean usouVagaPrioritaria = false;
         // TODO: Implementar ciclo completo do veículo
         // 1. Tentar entrar no estacionamento
         // 2. Se conseguiu entrar:
         //    - Simular tempo estacionado (1-5 segundos aleatório)
         //    - Sair do estacionamento
         // 3. Retornar tempo total (entrada até saída), ou -1 se desistiu
+
+        try {
+            if(estacionamento.tentarEntrar(veiculo) == true && veiculo.getTipo() == TipoVeiculo.PRIORITARIO){
+                usouVagaPrioritaria = true;
+            }
+            if(estacionamento.tentarEntrar(veiculo) == true){
+                int tempoEstacionado = 1000 + new Random().nextInt(4000);
+                Thread.sleep(tempoEstacionado);
+                estacionamento.sair(veiculo, usouVagaPrioritaria);
+            }
+
+            return System.currentTimeMillis() - inicio;
+            
+        } catch (Exception e) {
+        } finally {
+
+        }
         
         return -1L; // placeholder
     }
