@@ -3,107 +3,89 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Estacionamento {
-    // TODO: Declare os Semaphores necessários
-    // - vagas regulares (5)
-    // - vagas prioritárias (2)
-    // - portão entrada (1)
-    // - portão saída (1)
-    private static Semaphore entrada;
-    private static Semaphore saida;
-    private static Semaphore vagaRegular;
-    private static Semaphore vagaPrioritaria;
-    
+
+    private final Semaphore vagaRegular;
+    private final Semaphore vagaPrioritaria;
+    private final Semaphore portaoEntrada;
+    private final Semaphore portaoSaida;
     
     private final AtomicInteger totalEntradas = new AtomicInteger(0);
     private final AtomicInteger totalDesistencias = new AtomicInteger(0);
+
+    
     
     public Estacionamento() {
-        // TODO: Inicialize os Semaphores
-        entrada = new Semaphore(1);
-        saida = new Semaphore(1);
-        vagaRegular =  new Semaphore(5);
-        vagaPrioritaria =  new Semaphore(2);
+        vagaRegular = new Semaphore(5);
+        vagaPrioritaria = new Semaphore(2);
+        portaoEntrada = new Semaphore(1);
+        portaoSaida = new Semaphore(1);
     }
     
     public boolean tentarEntrar(Veiculo veiculo) throws InterruptedException {
-        // TODO: Implementar lógica de entrada
-        // 1. Adquirir portão de entrada
-        // 2. Log: veículo chegou ao portão
-        // 3. Tentar adquirir vaga (com timeout de 2 segundos)
-        //    - Se prioritário: tentar vaga prioritária primeiro, depois regular
-        //    - Se normal: apenas vaga regular
-        // 4. Se conseguiu vaga: incrementar totalEntradas e retornar true
-        // 5. Se não conseguiu: incrementar totalDesistencias e retornar false
-        // 6. Liberar portão de entrada (sempre!)
 
-        entrada.acquire();
+        portaoEntrada.acquire();
         System.out.println(veiculo + " chegou ao portão de entrada");
-        boolean conseguiuVaga = false;
-        boolean conseguiuVagaPrioritaria = false;
+
+        boolean conseguiuEntrar = false;
 
         try {
             if(veiculo.getTipo() == TipoVeiculo.PRIORITARIO){
-                // Veiculo PRIORITARIO
                 if(vagaPrioritaria.tryAcquire(2, TimeUnit.SECONDS)){
-                    // conseguiu vaga prioritaria
                     System.out.println(veiculo + " conseguiu vaga PRIORITARIA");
-                    conseguiuVaga = true;
-                    conseguiuVagaPrioritaria = true;
+                    conseguiuEntrar = true;
+                    veiculo.setConseguiuVagaPrioritaria(true);
                 }
-                else if(vagaRegular.tryAcquire(2, TimeUnit.SECONDS)){
-                    // nao conseguiu vaga prioritaria foi para regular
-                    System.out.println(veiculo + " conseguiu vaga Regular");
-                    conseguiuVaga = true;
-                }
+                else if (vagaRegular.tryAcquire(2, TimeUnit.SECONDS)) {
+                    System.out.println(veiculo + " conseguiu vaga REGULAR");  
+                    conseguiuEntrar = true; 
+                    veiculo.setConseguiuVagaPrioritaria(false);
+                }                 
             }
-            else{
-                // Veiculo REGULAR
+
+            else if(veiculo.getTipo() == TipoVeiculo.NORMAL){
                 if(vagaRegular.tryAcquire(2, TimeUnit.SECONDS)){
-                    System.out.println(veiculo + " conseguiu vaga REGULAR");
-                    conseguiuVaga = true;
+                    System.out.println(veiculo + " conseguiu vaga REGULAR");   
+                    conseguiuEntrar = true;
+                    veiculo.setConseguiuVagaPrioritaria(false);
                 }
             }
 
-            if(conseguiuVaga == true){
-                totalEntradas.incrementAndGet();
+            if (conseguiuEntrar == true) {
+                totalEntradas.incrementAndGet(); 
             }
-            else {
-               totalDesistencias.incrementAndGet(); 
-               System.out.println("Desistiu, não havia vagas disponíveis");
+            if(conseguiuEntrar == false){
+                totalDesistencias.incrementAndGet();
+                System.out.println(veiculo + " desistiu da vaga");  
+
             }
             
-        } catch (Exception e) {
-            Thread.currentThread().interrupt();
-
         } finally {
-            entrada.release();
+            portaoEntrada.release();
         }
-        
-       return conseguiuVaga;
+
+        return conseguiuEntrar;
     }
     
     
     public void sair(Veiculo veiculo, boolean usouVagaPrioritaria) throws InterruptedException {
-       // TODO: Implementar lógica de saída
-        // 1. Adquirir portão de saída
-        // 2. Log: veículo saindo
-        // 3. Liberar a vaga apropriada
-        // 4. Liberar portão de saída
 
-        saida.acquire();
+        portaoSaida.acquire();
+
+        System.out.println(veiculo + " está saindo do estacionamento... ");
+
         try {
-            System.out.println(veiculo + " saiu com sucesso!");
             if(usouVagaPrioritaria == true){
                 vagaPrioritaria.release();
             }
-            else{
+            if(usouVagaPrioritaria == false){
                 vagaRegular.release();
             }
+            System.out.println(veiculo + " saiu com sucesso!");
             
-        } catch (Exception e) {
         } finally {
-            saida.release();
-        }  
+            portaoSaida.release();
+        }
+
     }
     
     public int getTotalEntradas() {
@@ -121,11 +103,11 @@ public class Estacionamento {
         // TODO: Exibir quantas vagas estão disponíveis de cada tipo
         System.out.println("\n=== STATUS DO ESTACIONAMENTO ===");
         // Use availablePermits() dos semáforos
-        System.out.println("Vagas regulares disponíveis: "+ vagaRegular.availablePermits() + "/5");
-        System.out.println("Vagas prioritárias disponíveis: " +vagaPrioritaria.availablePermits() + "/2");
-        System.out.println("Total de entradas: " +totalEntradas);
-        System.out.println("Total de desistências: "+totalDesistencias);
-        System.out.println("=============================\n");
 
+        System.out.println("Vagas regulares disponíveis: " + vagaRegular.availablePermits() + "/5"); 
+        System.out.println("Vagas prioritárias disponíveis: " + vagaPrioritaria.availablePermits() + "/2"); 
+        System.out.println("Total de entradas: " +totalEntradas.get()); 
+        System.out.println("Total de desistências: " +totalDesistencias.get()); 
+        System.out.println("=================================="); 
     }
 }
