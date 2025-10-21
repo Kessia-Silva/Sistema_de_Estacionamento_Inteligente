@@ -11,8 +11,6 @@ public class Estacionamento {
     
     private final AtomicInteger totalEntradas = new AtomicInteger(0);
     private final AtomicInteger totalDesistencias = new AtomicInteger(0);
-
-    
     
     public Estacionamento() {
         vagaRegular = new Semaphore(5);

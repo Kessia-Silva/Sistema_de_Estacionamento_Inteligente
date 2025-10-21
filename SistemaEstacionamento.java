@@ -35,11 +35,12 @@ public class SistemaEstacionamento {
                 tempos.add(tempo);
             }
             } catch (Exception e) {
+                 System.err.println("Erro ao processar veículo: " + e.getMessage());
+                 e.printStackTrace();
             }
-        
          }
+
          executor.shutdown();
- 
          try {
             // espera até 60 segundos pelas tarefas terminarem
             if(!executor.awaitTermination(60, TimeUnit.SECONDS)){
